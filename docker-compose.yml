@@ -1,0 +1,161 @@
+version: '3.7'
+services:
+
+  postgres-order:
+    image: 339712958919.dkr.ecr.eu-north-1.amazonaws.com/myapp:postgres
+    environment:
+      POSTGRES_DB: order-service
+      POSTGRES_USER: vero
+      POSTGRES_PASSWORD: password
+      PGDATA: /data/postgres
+    volumes:
+      - postgres-order:/data/postgres
+    expose:
+      - "5431"
+    ports:
+      - "5431:5431"    
+    deploy:
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints: [node.role != manager]
+
+  postgres-stock:
+    image: 339712958919.dkr.ecr.eu-north-1.amazonaws.com/myapp:postgres
+    environment:
+      POSTGRES_DB: stock-service
+      POSTGRES_USER: vero
+      POSTGRES_PASSWORD: password
+      PGDATA: /data/postgres
+    volumes:
+      - postgres-stock:/data/postgres
+    ports:
+      - "5432:5432"
+    deploy:
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints: [node.role != manager]
+
+  ## Mongo Docker Compose Config
+  mongo:
+    image: 339712958919.dkr.ecr.eu-north-1.amazonaws.com/myapp:mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    expose:
+      - "27017"
+    volumes:
+      - mongo-data:/data/db
+    deploy:
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints: [node.role != manager]
+
+  # Zipkin
+  zipkin:
+    image: 339712958919.dkr.ecr.eu-north-1.amazonaws.com/myapp:zipkin
+    ports:
+      - "9411:9411"
+    deploy: 
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints: [node.role != manager]
+
+  ## Eureka Server
+  discovery-server:
+    # build: ./discovery-server/
+    image: 339712958919.dkr.ecr.eu-north-1.amazonaws.com/myapp:discovery-server
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - zipkin
+    deploy: 
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints: [node.role != manager]
+
+  api-gateway:
+    # build: ./api-gateway/
+    image: 339712958919.dkr.ecr.eu-north-1.amazonaws.com/myapp:api-gateway
+    ports:
+      - "8181:8080"
+    expose:
+      - "8181"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY=TRACE
+    depends_on:
+      - zipkin
+      - discovery-server
+    deploy: 
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints: [node.role != manager]
+
+  ## Product-Service Docker Compose Config
+  ticket-service:
+    # build: ./ticket-service/
+    image: 339712958919.dkr.ecr.eu-north-1.amazonaws.com/myapp:ticket-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - mongo
+      - discovery-server
+      - api-gateway
+    deploy: 
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints: [node.role != manager]
+
+  ## Order-Service Docker Compose Config
+  order-service:
+    # build: ./order-service/
+    image: 339712958919.dkr.ecr.eu-north-1.amazonaws.com/myapp:order-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-order:5431/order-service
+    depends_on:
+      - postgres-order
+      - zipkin
+      - discovery-server
+      - api-gateway
+    deploy: 
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints: [node.role != manager]
+
+  ## Stock-Service Docker Compose Config
+  stock-service:
+    # build: ./stock-service/
+    image: 339712958919.dkr.ecr.eu-north-1.amazonaws.com/myapp:stock-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-stock:5432/stock-service
+    depends_on:
+      - postgres-stock
+      - discovery-server
+      - api-gateway
+    deploy: 
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints: [node.role != manager]
+volumes:
+  postgres-stock:
+  postgres-order:
+  mongo-data:
