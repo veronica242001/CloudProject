@@ -4,12 +4,17 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
+import java.math.BigDecimal;
+
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class OrderDto {
 
-    private List<OrderItemsDto> orderItemsDtoList;
+    private String eventCode;
+    private String ticketType;
+    private BigDecimal price;
+    private Integer quantity;
+
 }

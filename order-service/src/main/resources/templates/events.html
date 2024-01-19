@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml" lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Events Available</title>
+    <title> Available Events</title>
 
     <link rel="stylesheet"
           href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
@@ -27,7 +27,7 @@
 
 <body style="margin-bottom: 150px">
     <div class="container marginTop centered"  >
-    <h1 style="font-weight: bold; text-align: center;color: lightgrey;"> Available Stocks </h1>
+    <h1 style="font-weight: bold; text-align: center;color: lightgrey;"> Available Events </h1>
     <tr th:if="${events.size() == 0}" style="margin-top:5rem;">
         <h2 class="m-5 centered"><span class="badge badge-secondary" style="background-color:rgba(169, 169, 169, 0.95); color:#8b3800">No events!</span></h2>
     </tr>
@@ -54,7 +54,13 @@
 
             <td>
                 <div>
-                    <a  class="btn mt-1 text-white" th:href="@{'/api/event/delete/'+${event.eventCode}}" style="background-color: #8b3800">Buy tickets</a>
+                    <a th:href="@{'/api/order/new/'+${event.eventCode}+'/'+ ${event.ticketType}}"
+                       th:if="${event.isInStock()}"
+                       class="btn mt-1 text-white"
+                       style="background-color: #8b3800">Buy tickets</a>
+                    <a th:if="${!event.isInStock()}"
+                       class="btn mt-1 text-white"
+                       style="background-color: #8b3800; pointer-events: none; cursor: not-allowed;">Sold Out</a>
                 </div>
             </td>
         </tr>

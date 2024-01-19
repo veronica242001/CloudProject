@@ -1,128 +1,105 @@
+---
 version: '3.7'
 services:
 
   postgres-order:
-    image: 339712958919.dkr.ecr.eu-north-1.amazonaws.com/myapp:postgres
+    container_name: postgres-order
+    image: postgres
     environment:
       POSTGRES_DB: order-service
       POSTGRES_USER: vero
       POSTGRES_PASSWORD: password
       PGDATA: /data/postgres
     volumes:
-      - postgres-order:/data/postgres
+      - ./postgres-order:/data/postgres
     expose:
       - "5431"
     ports:
-      - "5431:5431"    
-    deploy:
-      restart_policy:
-        condition: on-failure
-      placement:
-        constraints: [node.role != manager]
+      - "5431:5431"
+    command: -p 5431
+    restart: always
 
   postgres-stock:
-    image: 339712958919.dkr.ecr.eu-north-1.amazonaws.com/myapp:postgres
+    container_name: postgres-stock
+    image: postgres
     environment:
       POSTGRES_DB: stock-service
       POSTGRES_USER: vero
       POSTGRES_PASSWORD: password
       PGDATA: /data/postgres
     volumes:
-      - postgres-stock:/data/postgres
+      - ./postgres-stock:/data/postgres
     ports:
       - "5432:5432"
-    deploy:
-      restart_policy:
-        condition: on-failure
-      placement:
-        constraints: [node.role != manager]
+    restart: always
 
   ## Mongo Docker Compose Config
   mongo:
-    image: 339712958919.dkr.ecr.eu-north-1.amazonaws.com/myapp:mongo
+    container_name: mongo
+    image: mongo:4.4.14-rc0-focal
     restart: always
     ports:
       - "27017:27017"
     expose:
       - "27017"
     volumes:
-      - mongo-data:/data/db
-    deploy:
-      restart_policy:
-        condition: on-failure
-      placement:
-        constraints: [node.role != manager]
+      - ./mongo-data:/data/db
+
 
   # Zipkin
   zipkin:
-    image: 339712958919.dkr.ecr.eu-north-1.amazonaws.com/myapp:zipkin
-    ports:
-      - "9411:9411"
-    deploy: 
-      replicas: 2
-      restart_policy:
-        condition: on-failure
-      placement:
-        constraints: [node.role != manager]
+     image: openzipkin/zipkin
+     container_name: zipkin
+     ports:
+       - "9411:9411"
+
 
   ## Eureka Server
   discovery-server:
-    # build: ./discovery-server/
-    image: 339712958919.dkr.ecr.eu-north-1.amazonaws.com/myapp:discovery-server
+    build: ./discovery-server/
+    image: discovery-server:latest
+    container_name: discovery-server
     ports:
       - "8761:8761"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
     depends_on:
-      - zipkin
-    deploy: 
-      replicas: 2
-      restart_policy:
-        condition: on-failure
-      placement:
-        constraints: [node.role != manager]
+        - zipkin
 
   api-gateway:
-    # build: ./api-gateway/
-    image: 339712958919.dkr.ecr.eu-north-1.amazonaws.com/myapp:api-gateway
+    build: ./api-gateway/
+    image: api-gateway:latest
+    container_name: api-gateway
     ports:
       - "8181:8080"
     expose:
       - "8181"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
-      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY=TRACE
+      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY= TRACE
     depends_on:
       - zipkin
       - discovery-server
-    deploy: 
-      replicas: 2
-      restart_policy:
-        condition: on-failure
-      placement:
-        constraints: [node.role != manager]
+
 
   ## Product-Service Docker Compose Config
   ticket-service:
-    # build: ./ticket-service/
-    image: 339712958919.dkr.ecr.eu-north-1.amazonaws.com/myapp:ticket-service
+    build: ./ticket-service/
+    container_name: ticket-service
+    image: ticket-service:latest
     environment:
       - SPRING_PROFILES_ACTIVE=docker
     depends_on:
       - mongo
       - discovery-server
+      - zipkin
       - api-gateway
-    deploy: 
-      replicas: 2
-      restart_policy:
-        condition: on-failure
-      placement:
-        constraints: [node.role != manager]
 
   ## Order-Service Docker Compose Config
   order-service:
-    # build: ./order-service/
-    image: 339712958919.dkr.ecr.eu-north-1.amazonaws.com/myapp:order-service
+    build: ./order-service/
+    container_name: order-service
+    image: order-service:latest
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-order:5431/order-service
@@ -131,31 +108,17 @@ services:
       - zipkin
       - discovery-server
       - api-gateway
-    deploy: 
-      replicas: 2
-      restart_policy:
-        condition: on-failure
-      placement:
-        constraints: [node.role != manager]
 
   ## Stock-Service Docker Compose Config
   stock-service:
-    # build: ./stock-service/
-    image: 339712958919.dkr.ecr.eu-north-1.amazonaws.com/myapp:stock-service
+    build: ./stock-service/
+    container_name: stock-service
+    image: stock-service:latest
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-stock:5432/stock-service
     depends_on:
       - postgres-stock
+      - zipkin
       - discovery-server
       - api-gateway
-    deploy: 
-      replicas: 2
-      restart_policy:
-        condition: on-failure
-      placement:
-        constraints: [node.role != manager]
-volumes:
-  postgres-stock:
-  postgres-order:
-  mongo-data:

@@ -6,10 +6,11 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.math.BigDecimal;
 import java.util.List;
 
 @Entity
-@Table(name = "orders")
+@Table(name = "orders_t")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,7 +20,8 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String orderNumber;
-    @OneToMany(cascade = CascadeType.ALL)
-    private List<OrderItem> orderItemList;
+    private String eventCode;
+    private String ticketType;
+    private BigDecimal price;
+    private Integer quantity;
 }

@@ -62,6 +62,20 @@ public class StockService {
                 .ticketType(stock.getTicketType())
                 .build();
     }
-    
-    
+
+
+    public Integer updateStock(String eventCode, String ticketType, Integer quantity) {
+        Optional<Stock> optionalStock = stockRepository.findByEventCodeAndTicketType(eventCode, ticketType);
+
+        if (optionalStock.isPresent()) {
+            Stock existingStock = optionalStock.get();
+            existingStock.setQuantity(existingStock.getQuantity() - quantity);  // Update the quantity
+
+            stockRepository.save(existingStock);  // Save the updated entity back to the database
+            return existingStock.getQuantity();
+        }
+
+        return 0;
+    }
+
 }

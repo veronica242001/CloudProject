@@ -1,5 +1,6 @@
 package com.unibuc.ticketservice.service;
 
+import com.unibuc.ticketservice.dto.TicketDto;
 import com.unibuc.ticketservice.dto.TicketRequest;
 import com.unibuc.ticketservice.dto.TicketResponse;
 import com.unibuc.ticketservice.model.Ticket;
@@ -52,5 +53,16 @@ public class TicketService {
                 .description(ticket.getDescription())
                 .price(ticket.getPrice())
                 .build();
+    }
+
+    public TicketDto getTicketByEventCodeAndType(String eventCode, String ticketType) {
+        Ticket ticket = ticketRepository.getByEventCodeAndTicketType(eventCode, ticketType);
+        return TicketDto.builder()
+                .eventCode(ticket.getEventCode())
+                .ticketType(ticket.getTicketType())
+                .description(ticket.getDescription())
+                .price(ticket.getPrice())
+                .build();
+
     }
 }

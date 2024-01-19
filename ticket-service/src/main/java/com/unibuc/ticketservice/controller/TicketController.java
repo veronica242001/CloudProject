@@ -1,5 +1,6 @@
 package com.unibuc.ticketservice.controller;
 
+import com.unibuc.ticketservice.dto.TicketDto;
 import com.unibuc.ticketservice.dto.TicketRequest;
 import com.unibuc.ticketservice.dto.TicketResponse;
 import com.unibuc.ticketservice.service.TicketService;
@@ -58,5 +59,12 @@ public class TicketController {
     public ModelAndView deleteTransportation(@PathVariable String id) {
         ticketService.deleteObject(id);
         return new ModelAndView("redirect:/api/ticket");
+    }
+
+
+    @GetMapping("/eventCodeAndType/{eventCode}/{ticketType}")
+    public TicketDto getTicket(@PathVariable String eventCode, @PathVariable String ticketType) {
+        TicketDto ticketDto = ticketService.getTicketByEventCodeAndType(  eventCode,  ticketType);
+        return ticketDto;
     }
 }

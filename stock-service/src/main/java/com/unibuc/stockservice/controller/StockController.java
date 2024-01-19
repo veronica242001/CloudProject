@@ -56,9 +56,15 @@ public class StockController {
     }
 
     @RequestMapping ("/delete/{id}")
-    public ModelAndView deleteTransportation(@PathVariable Long id) {
+    public ModelAndView deleteStock(@PathVariable Long id) {
         stockService.deleteObject(id);
         return new ModelAndView("redirect:/api/stock");
+    }
+
+    @GetMapping ("/update/{eventCode}/{ticketType}/{quantity}")
+    public Integer updateStock(@PathVariable String eventCode, @PathVariable String ticketType, @PathVariable Integer quantity) {
+        return stockService.updateStock( eventCode, ticketType, quantity);
+
     }
 
     @GetMapping("/all")
